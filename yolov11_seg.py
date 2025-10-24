@@ -6,6 +6,8 @@ from typing import Tuple, Optional, List
 import threading
 from collections import deque
 
+from preprocess import preprocess_frame
+
 def load_model(model_path: str = 'yolo11n-seg.pt') -> YOLO:
     """Загружает модель YOLO для сегментации."""
     try:
@@ -111,8 +113,11 @@ def process_frame(
     """
     h, w = frame.shape[:2]
     
+    # Препроцессинг кадра
+    preprocessed_frame = preprocess_frame(frame, (w, h))
+    
     # Сегментация с оптимизацией
-    results = model(frame, verbose=False, conf=conf_threshold, imgsz=640)
+    results = model(preprocessed_frame, verbose=False, conf=conf_threshold, imgsz=640)
     
     # Создание маски
     human_mask = mask_processor.create_human_mask(results, h, w, conf_threshold)
