@@ -262,3 +262,10 @@ button {
         max-width: 90%;
     }
 }
+
+#camera_show {
+    position: relative;
+    width: 640px;
+    height: 480px;
+}
+

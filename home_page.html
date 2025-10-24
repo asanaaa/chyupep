@@ -13,6 +13,11 @@
             <div id="employee-info"></div>
             <img id="employee-logo" src="" alt="Логотип компании" style="display: none;">
         </div>
+        <div id="camera_show">
+            <video id="cameraVideo" autoplay muted style="position: absolute; width: 100%; height: 100%;"></video>
+            <canvas id="overlay" style="position: absolute; width: 100%; height: 100%;"></canvas>
+        </div>
+        <button id="camera_turn">Включить камеру</button>
         <div class="form-group">
             <label>Выбор фона:</label>
             <div class="background-icons">
@@ -24,6 +29,7 @@
                 <img class="background-icon" src="./backgrounds/images.jpg" alt="Фон 6" data-bg="./backgrounds/images.jpg">
                 <img class="background-icon" src="./backgrounds/transparent.png" alt="Градиент" data-bg="gradient">
             </div>
+            
         </div>
         <form id="employeeForm">
             <!-- Основная информация -->
@@ -135,15 +141,17 @@
                 </div>
             </div>
 
-            <!-- Кнопки действий
+            <!-- Кнопки действий -->
             <div class="btn-group">
                 <button type="submit" class="btn-primary">Применить изменения</button>
                 <button type="reset" class="btn-secondary">Сбросить форму</button>
-            </div> -->
+            </div>
         </form>
     </div>
 
     <script src="script.js"></script>
     <script src="background.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+    <script type="module" src="camera.js"></script>
 </body>
 </html>
