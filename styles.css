@@ -42,6 +42,7 @@ body {
     border-radius: 6px;
     padding: 5px;
     background: rgba(255, 255, 255, 0.8);
+    z-index: 1; /* Текст и логотип ПОД человеком */
 }
 
 #employee-info {
@@ -53,16 +54,16 @@ body {
     max-width: 80%;
     line-height: 1.8;
     white-space: pre-line;
-    /* Улучшенная обводка без фона */
     text-shadow: 
         1px 1px 2px rgba(0, 0, 0, 0.8),
         -1px -1px 2px rgba(0, 0, 0, 0.8),
         1px -1px 2px rgba(0, 0, 0, 0.8),
         -1px 1px 2px rgba(0, 0, 0, 0.8);
-    /* Убрать фон и отступы */
     background: transparent;
     padding: 0;
+    z-index: 1; /* Текст и логотип ПОД человеком */
 }
+
 .background-icons {
     display: flex;
     gap: 10px;
@@ -224,6 +225,50 @@ button {
     display: none;
 }
 
+/* Стили для камеры */
+#cameraVideo {
+    display: none; /* Полностью скрываем видео */
+}
+
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    z-index: 3; /* Человек ПОВЕРХ текста */
+    display: none;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: high-quality;
+}
+
+/* Кнопка камеры */
+#camera_turn {
+    display: block;
+    margin: 15px auto;
+    padding: 12px 24px;
+    background: #0052CC;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#camera_turn:hover {
+    background: #0041a8;
+    transform: scale(1.05);
+}
+
+/* Скрываем ненужный контейнер */
+#camera_show {
+    display: none;
+}
+
 @media (max-width: 600px) {
     .container {
         padding: 15px;
@@ -261,11 +306,43 @@ button {
         bottom: 10px;
         max-width: 90%;
     }
+    
+    #camera_turn {
+        width: 90%;
+        margin: 10px auto;
+    }
+}
+#overlay {
+    /* Улучшение рендеринга */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: high-quality;
+    /* Легкое размытие для сглаживания краев */
+    filter: blur(0.5px);
 }
 
-#camera_show {
-    position: relative;
-    width: 640px;
-    height: 480px;
+/* Стили для отладки */
+.debug-overlay {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #00ff00;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    z-index: 10000;
+    pointer-events: none;
+    border: 1px solid #00ff00;
 }
 
+.debug-overlay::before {
+    display: block;
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 3px;
+}

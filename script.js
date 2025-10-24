@@ -42,15 +42,6 @@ function generateJSON() {
     return JSON.stringify(employeeData, null, 2);
 }
 
-// Обработка отправки формы
-document.getElementById('employeeForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const jsonContent = generateJSON();
-    console.log(jsonContent);
-    // Сигнализируем background.js обработать форму
-    document.dispatchEvent(new CustomEvent('applyChanges'));
-});
-
 // Инициализация предпросмотра логотипа при загрузке
 window.addEventListener('load', function() {
     const logoUrl = document.getElementById('logo_url').value;
