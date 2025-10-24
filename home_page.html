@@ -5,63 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Форма сотрудника</title>
     <link rel="stylesheet" href="styles.css">
-
 </head>
 <body>
     <div class="container">
         <h1>Форма данных сотрудника</h1>
-        
+        <div id="background">
+            <div id="employee-info"></div>
+            <img id="employee-logo" src="" alt="Логотип компании" style="display: none;">
+        </div>
+        <div class="form-group">
+            <label>Выбор фона:</label>
+            <div class="background-icons">
+                <img class="background-icon selected" src="./backgrounds/1920х1080.png" alt="Фон 1" data-bg="./backgrounds/1920х1080.png">
+                <img class="background-icon" src="./backgrounds/1920х1080_2.png" alt="Фон 2" data-bg="./backgrounds/1920х1080_2.png">
+                <img class="background-icon" src="./backgrounds/1920х1080_3.png" alt="Фон 3" data-bg="./backgrounds/1920х1080_3.png">
+                <img class="background-icon" src="./backgrounds/1920х1080_4.png" alt="Фон 4" data-bg="./backgrounds/1920х1080_4.png">
+                <img class="background-icon" src="./backgrounds/image.png" alt="Фон 5" data-bg="./backgrounds/image.png">
+                <img class="background-icon" src="./backgrounds/images.jpg" alt="Фон 6" data-bg="./backgrounds/images.jpg">
+                <img class="background-icon" src="./backgrounds/transparent.png" alt="Градиент" data-bg="gradient">
+            </div>
+        </div>
         <form id="employeeForm">
             <!-- Основная информация -->
             <div class="form-section">
                 <h2>Основная информация</h2>
-                
                 <div class="form-group">
                     <label for="full_name">ФИО сотрудника:</label>
                     <input type="text" id="full_name" name="full_name" 
                            value="Иванов Сергей Петрович" required>
                 </div>
-
                 <div class="form-group">
                     <label for="position">Должность:</label>
                     <input type="text" id="position" name="position" 
                            value="Ведущий инженер по компьютерному зрению" required>
                 </div>
-
                 <div class="form-group">
                     <label for="company">Компания:</label>
                     <input type="text" id="company" name="company" 
                            value="ООО «Рога и Копыта»" required>
                 </div>
-
                 <div class="form-group">
                     <label for="department">Департамент:</label>
                     <input type="text" id="department" name="department" 
-                           value="Департамент компьютерного зрения" required>
+                           value="Департамент компьютерного зрения" class="privacy-medium" required>
                 </div>
-
                 <div class="form-group">
                     <label for="office_location">Место работы:</label>
                     <input type="text" id="office_location" name="office_location" 
-                           value="Новосибирск, технопарк «Идея»" required>
+                           value="Новосибирск, технопарк «Идея»" class="privacy-medium" required>
                 </div>
             </div>
 
             <!-- Контактная информация -->
             <div class="form-section">
                 <h2>Контактная информация</h2>
-                
                 <div class="nested-section">
                     <div class="form-group">
                         <label for="email">Email:</label>
                         <input type="email" id="email" name="contact_email" 
-                               value="sergey.ivanov@t1dp.ru" required>
+                               value="sergey.ivanov@t1dp.ru" class="privacy-high">
                     </div>
-
                     <div class="form-group">
                         <label for="telegram">Telegram:</label>
                         <input type="text" id="telegram" name="contact_telegram" 
-                               value="@sergey_vision" required>
+                               value="@sergey_vision" class="privacy-high">
                     </div>
                 </div>
             </div>
@@ -69,18 +76,16 @@
             <!-- Брендинг -->
             <div class="form-section">
                 <h2>Брендинг</h2>
-                
                 <div class="nested-section">
                     <div class="form-group">
                         <label for="logo_url">URL логотипа:</label>
                         <input type="url" id="logo_url" name="logo_url" 
-                               value="https://example.com/logo.png">
+                               value="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTk9Tnd2c4e1SAtoFP8j7oY860-ZTZHPjXvsQ&s">
                         <div class="logo-preview">
                             <img id="logoPreview" src="" alt="Предпросмотр логотипа" 
                                  style="display: none;">
                         </div>
                     </div>
-
                     <div class="form-group">
                         <label>Корпоративные цвета:</label>
                         <div class="color-preview">
@@ -90,19 +95,16 @@
                                  style="background-color: #00B8D9;"></div>
                         </div>
                     </div>
-
                     <div class="form-group">
                         <label for="primary_color">Основной цвет (HEX):</label>
                         <input type="text" id="primary_color" name="primary_color" 
                                value="#0052CC" pattern="^#[0-9A-Fa-f]{6}$">
                     </div>
-
                     <div class="form-group">
                         <label for="secondary_color">Вторичный цвет (HEX):</label>
                         <input type="text" id="secondary_color" name="secondary_color" 
                                value="#00B8D9" pattern="^#[0-9A-Fa-f]{6}$">
                     </div>
-
                     <div class="form-group">
                         <label for="slogan">Слоган:</label>
                         <input type="text" id="slogan" name="slogan" 
@@ -114,7 +116,6 @@
             <!-- Уровень приватности -->
             <div class="form-section">
                 <h2>Настройки приватности</h2>
-                
                 <div class="form-group">
                     <label>Уровень приватности:</label>
                     <div class="radio-group">
@@ -134,14 +135,15 @@
                 </div>
             </div>
 
-            <!-- Кнопки действий -->
+            <!-- Кнопки действий
             <div class="btn-group">
-                <button type="submit" class="btn-primary">Сохранить данные</button>
+                <button type="submit" class="btn-primary">Применить изменения</button>
                 <button type="reset" class="btn-secondary">Сбросить форму</button>
-            </div>
+            </div> -->
         </form>
     </div>
 
     <script src="script.js"></script>
+    <script src="background.js"></script>
 </body>
 </html>

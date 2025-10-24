@@ -1,3 +1,5 @@
+console.log('script.js loaded');
+
 // Обновление предпросмотра логотипа
 document.getElementById('logo_url').addEventListener('input', function(e) {
     const preview = document.getElementById('logoPreview');
@@ -7,15 +9,6 @@ document.getElementById('logo_url').addEventListener('input', function(e) {
     } else {
         preview.style.display = 'none';
     }
-});
-
-// Обновление цветов предпросмотра
-document.getElementById('primary_color').addEventListener('input', function(e) {
-    document.getElementById('primaryColor').style.backgroundColor = e.target.value;
-});
-
-document.getElementById('secondary_color').addEventListener('input', function(e) {
-    document.getElementById('secondaryColor').style.backgroundColor = e.target.value;
 });
 
 // Генерация JSON
@@ -46,17 +39,16 @@ function generateJSON() {
         }
     };
 
-    jsonContent = JSON.stringify(employeeData, null, 2);
-    
-    return jsonContent;
+    return JSON.stringify(employeeData, null, 2);
 }
 
 // Обработка отправки формы
 document.getElementById('employeeForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    jsonContent = generateJSON();
+    const jsonContent = generateJSON();
     console.log(jsonContent);
-    alert('Данные успешно сохранены!');
+    // Сигнализируем background.js обработать форму
+    document.dispatchEvent(new CustomEvent('applyChanges'));
 });
 
 // Инициализация предпросмотра логотипа при загрузке
@@ -65,5 +57,7 @@ window.addEventListener('load', function() {
     if (logoUrl) {
         document.getElementById('logoPreview').src = logoUrl;
         document.getElementById('logoPreview').style.display = 'block';
+        document.getElementById('employee-logo').src = logoUrl;
+        document.getElementById('employee-logo').style.display = 'block';
     }
 });
