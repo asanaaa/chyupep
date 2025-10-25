@@ -1,194 +1,202 @@
-const cameraButton = document.getElementById('camera_turn');
-const cameraVideo = document.getElementById('cameraVideo');
-const canvasElement = document.getElementById('overlay');
-const canvasCtx = canvasElement.getContext('2d');
+console.log("camera.js loaded: BodyPix with WebGL + soft mask");
+
+const cameraButton = document.getElementById("camera_turn");
+const cameraVideo = document.getElementById("cameraVideo");
+const canvasElement = document.getElementById("overlay");
+const canvasCtx = canvasElement.getContext("2d");
 
 let isCameraOn = false;
-let camera = null;
-let animationId = null;
+let net = null;
+let stream = null;
 
-// Статистика производительности
+// === СТАТИСТИКА ===
 const stats = {
-    fps: 0,
-    frameCount: 0,
-    lastTime: performance.now(),
-    processingTime: 0,
-    memory: 0
+  fps: 0,
+  frameCount: 0,
+  lastTime: performance.now(),
+  processingTime: 0,
+  memory: 0
 };
 
-const selfieSegmentation = new SelfieSegmentation({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`
-});
-
-selfieSegmentation.setOptions({
-    modelSelection: 1,
-    smoothSegmentation: true,
-    smoothness: 0.8,
-});
-
-selfieSegmentation.onResults(onResults);
-
-// Создаем overlay для отладки
 function createDebugOverlay() {
-    const statsOverlay = document.createElement('div');
-    statsOverlay.id = 'debug-stats';
-    statsOverlay.className = 'debug-overlay';
-    document.body.appendChild(statsOverlay);
-    return statsOverlay;
+  const div = document.createElement("div");
+  div.id = "debug-stats";
+  div.className = "debug-overlay";
+  document.body.appendChild(div);
+  return div;
 }
-
 const statsOverlay = createDebugOverlay();
 
-// Обновление статистики
 function updateStats() {
-    stats.frameCount++;
-    const currentTime = performance.now();
-    const delta = currentTime - stats.lastTime;
-    
-    if (delta >= 1000) {
-        stats.fps = Math.round((stats.frameCount * 1000) / delta);
-        stats.frameCount = 0;
-        stats.lastTime = currentTime;
-        
-        if (performance.memory) {
-            stats.memory = Math.round(performance.memory.usedJSHeapSize / 1048576);
-        }
-        
-        statsOverlay.innerHTML = `
-            FPS: ${stats.fps}<br>
-            Обработка: ${stats.processingTime.toFixed(1)}ms<br>
-            Память: ${stats.memory}MB<br>
-            Разрешение: ${canvasElement.width}x${canvasElement.height}
-        `;
-    }
-    
-    if (isCameraOn) {
-        requestAnimationFrame(updateStats);
-    }
+  stats.frameCount++;
+  const now = performance.now();
+  const delta = now - stats.lastTime;
+
+  if (delta >= 1000) {
+    stats.fps = Math.round((stats.frameCount * 1000) / delta);
+    stats.frameCount = 0;
+    stats.lastTime = now;
+
+    if (performance.memory) stats.memory = Math.round(performance.memory.usedJSHeapSize / 1048576);
+
+    statsOverlay.innerHTML = `
+      FPS: ${stats.fps}<br>
+      Обработка: ${stats.processingTime.toFixed(1)}ms<br>
+      Память: ${stats.memory}MB<br>
+      Разрешение: ${canvasElement.width}x${canvasElement.height}
+    `;
+  }
+
+  if (isCameraOn) requestAnimationFrame(updateStats);
 }
 
-function onResults(results) {
-    if (!isCameraOn) return;
-    
-    const startTime = performance.now();
-    const canvasWidth = canvasElement.width;
-    const canvasHeight = canvasElement.height;
-    
-    canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-    canvasCtx.drawImage(results.image, 0, 0, canvasWidth, canvasHeight);
+// === GLOBALS ===
+const maskCanvas = document.createElement("canvas");
+const maskCtx = maskCanvas.getContext("2d");
+let mask = null;
+let frameCounter = 0;
+const maskUpdateInterval = 3; // обновляем маску раз в 3 кадра
 
-    const maskCanvas = document.createElement('canvas');
-    maskCanvas.width = canvasWidth;
-    maskCanvas.height = canvasHeight;
-    const maskCtx = maskCanvas.getContext('2d');
-    
-    maskCtx.drawImage(results.segmentationMask, 0, 0, canvasWidth, canvasHeight);
+// === Soft mask processing (dilate + blur) ===
+function processMaskWithSoftEdges(maskImageData, blurRadius = 4) {
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = maskCanvas.width;
+  tempCanvas.height = maskCanvas.height;
+  const tempCtx = tempCanvas.getContext("2d");
 
-    const maskData = maskCtx.getImageData(0, 0, canvasWidth, canvasHeight);
-    const data = maskData.data;
+  tempCtx.putImageData(maskImageData, 0, 0);
 
-    for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i];
-        let finalAlpha;
-        
-        if (alpha > 230) {
-            finalAlpha = 255;
-        } else if (alpha > 180) {
-            finalAlpha = alpha;
-        } else if (alpha > 120) {
-            finalAlpha = Math.round(alpha * 0.7);
-        } else if (alpha > 80) {
-            finalAlpha = Math.round(alpha * 0.4);
-        } else {
-            finalAlpha = 0;
-        }
+  // Простая дилатация
+  tempCtx.globalCompositeOperation = "source-over";
+  for (let i = 0; i < 2; i++) {
+    tempCtx.drawImage(tempCanvas, -1, 0);
+    tempCtx.drawImage(tempCanvas, 1, 0);
+    tempCtx.drawImage(tempCanvas, 0, -1);
+    tempCtx.drawImage(tempCanvas, 0, 1);
+  }
 
-        data[i + 3] = finalAlpha;
-        data[i] = 0;
-        data[i + 1] = 0;
-        data[i + 2] = 0;
-    }
-    
-    maskCtx.putImageData(maskData, 0, 0);
+  // Размытие для плавного перехода
+  tempCtx.filter = `blur(${blurRadius}px)`;
+  tempCtx.drawImage(tempCanvas, 0, 0);
+  tempCtx.filter = "none";
+
+  return tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+}
+
+// === FRAME PROCESSING ===
+async function processFrame() {
+  if (!isCameraOn || !net) return;
+
+  const startTime = performance.now();
+  frameCounter++;
+
+  // --- обновление маски раз в maskUpdateInterval кадров ---
+  if (frameCounter % maskUpdateInterval === 0) {
+    const segmentation = await net.segmentPerson(cameraVideo, {
+      internalResolution: "medium",
+      segmentationThreshold: 0.8,
+      refineEdges: true
+    });
+
+    // Маска: человек — непрозрачный, фон — прозрачный
+    mask = bodyPix.toMask(
+      segmentation,
+      { r: 0, g: 0, b: 0, a: 255 },
+      { r: 0, g: 0, b: 0, a: 0 },
+      true
+    );
+
+    // Плавные края + дилатация
+    mask = processMaskWithSoftEdges(mask, 4);
+  }
+
+  // --- Рисуем видео каждый кадр ---
+  canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+  canvasCtx.drawImage(cameraVideo, 0, 0, canvasElement.width, canvasElement.height);
+
+  // --- Применяем последнюю маску ---
+  if (mask) {
+    maskCanvas.width = canvasElement.width;
+    maskCanvas.height = canvasElement.height;
+    maskCtx.putImageData(mask, 0, 0);
 
     canvasCtx.save();
-    canvasCtx.globalCompositeOperation = 'destination-in';
-    canvasCtx.drawImage(maskCanvas, 0, 0, canvasWidth, canvasHeight);
+    canvasCtx.globalCompositeOperation = "destination-in";
+    canvasCtx.drawImage(maskCanvas, 0, 0, canvasElement.width, canvasElement.height);
     canvasCtx.restore();
+  }
 
-    stats.processingTime = performance.now() - startTime;
+  stats.processingTime = performance.now() - startTime;
 
-    if (isCameraOn && camera) {
-        cameraVideo.requestVideoFrameCallback(() => {
-            selfieSegmentation.send({ image: cameraVideo });
-        });
-    }
+  if (isCameraOn) requestAnimationFrame(processFrame);
 }
 
-function startCamera() {
-    if (camera) return;
-    
-    camera = new Camera(cameraVideo, {
-        onFrame: async () => {},
-        width: 1280,
-        height: 720
-    });
+// === CAMERA START ===
+async function startCamera() {
+  if (isCameraOn) return;
 
-    camera.start().then(() => {
-        canvasElement.width = 1280;
-        canvasElement.height = 720;
-        
-        canvasCtx.imageSmoothingEnabled = true;
-        canvasCtx.imageSmoothingQuality = 'high';
-        
-        canvasElement.style.display = 'block';
-        isCameraOn = true;
-        cameraButton.textContent = '⏹️ Выключить камеру';
-        
-        updateStats();
-        selfieSegmentation.send({ image: cameraVideo });
-        
-    }).catch(error => {
-        console.error('Ошибка запуска камеры:', error);
-        alert('Не удалось запустить камеру. Проверьте разрешения.');
+  // Включаем WebGL backend
+  await tf.setBackend("webgl");
+  await tf.ready();
+
+  if (!net) {
+    statsOverlay.innerHTML = "Загрузка модели BodyPix...";
+    net = await bodyPix.load({
+      architecture: "MobileNetV1",
+      outputStride: 16,
+      multiplier: 0.75,
+      quantBytes: 2
     });
+    statsOverlay.innerHTML = "Модель загружена ✅";
+  }
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 1280, height: 720 },
+      audio: false
+    });
+    cameraVideo.srcObject = stream;
+
+    await new Promise(resolve => cameraVideo.onloadeddata = resolve);
+    await cameraVideo.play();
+
+    canvasElement.width = 1280;
+    canvasElement.height = 720;
+    canvasElement.style.display = "block";
+
+    isCameraOn = true;
+    cameraButton.textContent = "⏹️ Выключить камеру";
+
+    updateStats();
+    processFrame();
+  } catch (error) {
+    console.error("Ошибка запуска камеры:", error);
+    alert("Не удалось запустить камеру. Проверьте разрешения.");
+  }
 }
 
+// === CAMERA STOP ===
 function stopCamera() {
-    if (animationId) {
-        cancelAnimationFrame(animationId);
-        animationId = null;
-    }
-    
-    if (camera) {
-        camera.stop();
-        camera = null;
-    }
-    
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    canvasElement.style.display = 'none';
-    isCameraOn = false;
-    cameraButton.textContent = '📷 Включить камеру';
-    statsOverlay.innerHTML = 'Камера выключена';
+  if (stream) stream.getTracks().forEach(track => track.stop());
+  stream = null;
+
+  isCameraOn = false;
+  canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+  canvasElement.style.display = "none";
+  cameraButton.textContent = "📷 Включить камеру";
+  statsOverlay.innerHTML = "Камера выключена";
 }
 
-// Обработчики событий
-cameraButton.addEventListener('click', () => {
-    if (isCameraOn) {
-        stopCamera();
-    } else {
-        startCamera();
-    }
+// === EVENTS ===
+cameraButton.addEventListener("click", () => {
+  if (isCameraOn) stopCamera();
+  else startCamera();
 });
 
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden && isCameraOn) {
-        stopCamera();
-    }
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && isCameraOn) stopCamera();
 });
 
-window.addEventListener('beforeunload', () => {
-    if (isCameraOn) {
-        stopCamera();
-    }
+window.addEventListener("beforeunload", () => {
+  if (isCameraOn) stopCamera();
 });
