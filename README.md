@@ -1,1 +1,13 @@
-# -
+## Инструкция для быстрого запуска
+
+### 1. Клонируем репозиторий
+```bash
+git clone https://github.com/asanaaa/chyupep.git
+cd chyupep  
+```
+### 2. Запускаем веб-интерфейс  
+```bash
+python -m http.server 8000
+```  
+### 3. Переходим на страницу в браузере  
+*http://localhost:8000*
